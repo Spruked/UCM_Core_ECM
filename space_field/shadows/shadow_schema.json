@@ -1,0 +1,47 @@
+{
+  "shadow_schema": {
+    "version": "1.0",
+    "purpose": "Lightweight metadata for cross-SKG awareness without logic leakage"
+  },
+  
+  "shadow_structure": {
+    "shadow_id": "SHA3-256 hash of (skg_id + node_id + timestamp)",
+    "skg_origin": "locke_empiricism_skg",
+    "timestamp_ms": 1703123456789,
+    "node_location": "SPACE_FIELD_NODE_ID",
+    "evaluation_target": "claim_hash_0xabc123...",
+    
+    "non_binding_metadata": {
+      "fired_rules": ["RULE_002", "RULE_005"],
+      "confidence_delta": 0.15,
+      "attention_shift": "increased_focus_on_causality",
+      "contradiction_flag": "hume_induction_gap_detected",
+      "uncertainty_markers": ["secondary_quality_uncertain", "probability_not_certainty"],
+      "emphasis_notes": ["sensory_grounding_critical", "causal_inference_weak"]
+    },
+    
+    "logic_integrity": {
+      "status": "SEALED",
+      "skg_hash": "0x4f2a1c9d...",
+      "invocation_count": 3,
+      "shadow_type": "METADATA_ONLY"
+    }
+  },
+  
+  "shadow_constraints": {
+    "max_size_bytes": 1024,
+    "no_logic_transfer": true,
+    "no_rule_inheritance": true,
+    "read_only_for_other_skgs": true,
+    "ttl_ms": 5000
+  },
+  
+  "resonance_markers": {
+    "trigger_condition": "≥2 shadows in same node within TTL",
+    "marker_content": {
+      "skgs_involved": ["locke", "hume"],
+      "confidence_shifts": [+0.15, -0.10],
+      "timestamp": 1703123456789
+    }
+  }
+}

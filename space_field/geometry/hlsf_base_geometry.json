@@ -1,0 +1,60 @@
+{
+  "node_schema": {
+    "version": "1.0",
+    "description": "Geometric node in HLSF where SKG beams traverse"
+  },
+  
+  "node_structure": {
+    "node_id": "SPACE_247",
+    "coordinates": {
+      "x": 12.5,
+      "y": -3.2,
+      "z": 7.8,
+      "domain_vector": "causal_inference_axis"
+    },
+    
+    "concept_domain": "causal_inference",
+    "complexity_rating": 0.73,
+    "traversal_cost": 1.2,
+    
+    "seeds_available": {
+      "logic": ["seed_inductive_reasoner", "seed_monotonic"],
+      "reference": ["vault_physics_reference"]
+    },
+    
+    "context_shadows": [
+      {
+        "shadow_id": "0xshadow123...",
+        "skg_origin": "locke_empiricism",
+        "timestamp_ms": 1703123456789,
+        "ttl_ms": 5000
+      }
+    ],
+    
+    "resonance_markers": {
+      "last_mark_timestamp": 1703123456800,
+      "marks": [
+        {
+          "event_id": "CROSS_PATH_001",
+          "skgs_involved": ["locke", "hume"],
+          "confidence_shifts": [0.15, -0.10]
+        }
+      ]
+    },
+    
+    "adjacency": {
+      "forward_nodes": ["SPACE_248", "SPACE_249"],
+      "backward_nodes": ["SPACE_246"],
+      "semantic_edges": [
+        {"to": "SPACE_248", "weight": 0.85, "type": "causal_strengthening"},
+        {"to": "SPACE_249", "weight": 0.32, "type": "probabilistic_alternative"}
+      ]
+    }
+  },
+  
+  "node_types": {
+    "DECISION_NODE": {"requires_seed_invocation": true, "traversal_cost": 1.5},
+    "ASSESSMENT_NODE": {"requires_reference_query": true, "traversal_cost": 1.2},
+    "CONVERGENCE_NODE": {"aggregation_point": true, "traversal_cost": 0.8}
+  }
+}

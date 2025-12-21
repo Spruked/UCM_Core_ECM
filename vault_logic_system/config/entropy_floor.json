@@ -1,0 +1,60 @@
+{
+  "entropy_floor_specification": {
+    "version": "1.0",
+    "purpose": "Minimum uncertainty threshold to prevent overconfidence"
+  },
+  
+  "floor_calculation": {
+    "base_floor": 0.15,
+    "adjustment_rules": [
+      {
+        "condition": "claim_domain == 'metaphysical'",
+        "adjustment": "+0.10",
+        "rationale": "Metaphysical claims inherently uncertain"
+      },
+      {
+        "condition": "reference_seed_violations > 0",
+        "adjustment": "+0.05",
+        "rationale": "Scientific constraints increase uncertainty"
+      },
+      {
+        "condition": "cross_path_dissent_detected",
+        "adjustment": "+0.08",
+        "rationale": "Philosophical disagreement raises entropy"
+      },
+      {
+        "condition": "byzantine_flag_raised",
+        "adjustment": "+0.12",
+        "rationale": "Potential fault demands higher caution"
+      }
+    ]
+  },
+  
+  "entropy_ceiling": {
+    "maximum_allowed": 0.85,
+    "action_if_exceeded": {
+      "primary": "SUSPEND_JUDGMENT",
+      "secondary": "Escalate to human review",
+      "tertiary": "Log as epistemic_limit_reached"
+    }
+  },
+  
+  "entropy_component_breakdown": {
+    "semantic_ambiguity": "weight: 0.30",
+    "reference_uncertainty": "weight: 0.25",
+    "philosophical_divergence": "weight: 0.25",
+    "cross_path_volatility": "weight: 0.20"
+  },
+  
+  "reporting_format": {
+    "final_entropy": "0.00",
+    "floor_applied": "0.15",
+    "component_breakdown": {
+      "semantic": 0.00,
+      "reference": 0.00,
+      "philosophical": 0.00,
+      "cross_path": 0.00
+    },
+    "confidence_adjustment": -0.00
+  }
+}

@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  ucm-core-ecm:
+    build: .
+    container_name: ucm-core-ecm
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    working_dir: /app
+    command: python vault_logic_system/tests/run_tests.py
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8000:8000"  # For future API
+    restart: unless-stopped
+
+  # Optional: Development service with hot reload
+  ucm-dev:
+    build: .
+    container_name: ucm-core-ecm-dev
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: tail -f /dev/null  # Keep container running
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8001:8000"
+    profiles:
+      - dev

@@ -1,0 +1,108 @@
+{
+  "protocol_metadata": {
+    "name": "Verdict Artifact Consensus Protocol",
+    "version": "1.0",
+    "byzantine_tolerance": "f < n/3 corrupted cores",
+    "key_lifetime": "EPHEMERAL (destroyed post-build)",
+    "public_key_availability": "FIRMWARE_IMMUTABLE"
+  },
+  
+  "core_specification": {
+    "each_core_Ci": {
+      "state": {
+        "private_key": "ChaCha20-Poly1305 key generated at build",
+        "public_key": "Corresponding public key burned to firmware",
+        "internal_state": "ENCRYPTED_OPAQUE"
+      },
+      "outputs": {
+        "verdict": "Resolved | Underdetermined | Rejected",
+        "verdict_hash": "sha3-256(verdict + input_hash + entropy + timestamp + provenance_ordinal)",
+        "entropy": "entropy measure from internal traversal",
+        "edge_ratio": "shared_edge_ratio from space_field",
+        "falsification_flag": "boolean indicating internal falsification detected",
+        "provenance": "sorted list of contributing philosopher SKG IDs"
+      },
+      "signature": {
+        "algorithm": "EdDSA (Ed25519) over verdict_hash",
+        "signing_key": "private_key (never leaves core)",
+        "signature_output": "base64 encoded"
+      }
+    }
+  },
+
+  "consensus_mechanism": {
+    "ring_topology": {
+      "description": "Each core Ci receives signed verdicts from C(i-1) and C(i+1)",
+      "verification": "Verify EdDSA signatures using firmware public keys",
+      "propagation": "Gossip protocol with 2-hop redundancy"
+    },
+    
+    "acceptance_rule": {
+      "formula": "IF (identical_verdict_hash_count >= floor(2n/3)) THEN accept_verdict",
+      "fallback": {
+        "no_consensus": "SUSPEND_JUDGMENT",
+        "action": "Escalate to human review with full artifact set"
+      }
+    },
+    
+    "byzantine_detection": {
+      "isolated_dissent": {
+        "condition": "Exactly one core produces different verdict_hash",
+        "response": "Flag dissenting core as BYZANTINE_SUSPECT",
+        "tolerance": "System continues if consensus exists among remaining 2/3"
+      },
+      
+      "split_failure": {
+        "condition": "Verdict hashes split 2-2 (even number of cores)",
+        "response": "No consensus possible → SUSPEND_JUDGMENT",
+        "metadata": "Record divergence for audit"
+      },
+      
+      "entropy_divergence": {
+        "condition": "entropy(Ci) differs by >2σ from group mean",
+        "response": "Flag for investigation but do not automatically reject",
+        "rationale": "High entropy may indicate legitimate uncertainty, not fault"
+      }
+    }
+  },
+
+  "artifact_verification": {
+    "verdict_hash_computation": {
+      "inputs": [
+        "utf8_bytes(verdict)",
+        "hex(seed_vault_hash)",
+        "float_bytes(entropy, 8)",
+        "int_bytes(timestamp, 64)",
+        "sorted_concat(philosopher_ids)"
+      ],
+      "algorithm": "SHA3-256",
+      "output": "32-byte digest"
+    },
+    
+    "signature_verification": {
+      "inputs": ["verdict_hash", "core_public_key", "signature_bytes"],
+      "algorithm": "Ed25519_verify",
+      "failure_action": "REJECT_ARTIFACT_AS_TAMPERED"
+    }
+  },
+
+  "ceremony_specification": {
+    "build_phase": {
+      "1_generate_keys": "Each core generates ChaCha20-Poly1305 + Ed25519 keypair",
+      "2_burn_public_key": "Public key written to firmware ROM, marked read-only",
+      "3_encrypt_core": "Core logic encrypted with private key",
+      "4_destroy_private_key": "Secure erase, no copies, no backups"
+    },
+    
+    "initialization": {
+      "firmware_verification": "Bootloader verifies public key integrity against hash",
+      "self_test": "Core runs internal diagnostic, outputs signed test_verdict",
+      "consensus_ring_activation": "Cores exchange signed test_verdicts to verify protocol"
+    },
+    
+    "runtime": {
+      "key_absence_verification": "Periodic hardware check that private key memory is zeroed",
+      "tamper_detection": "Any attempt to read private key region triggers hardware fuse"
+    }
+  }
+}

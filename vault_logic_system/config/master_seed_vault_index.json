@@ -1,0 +1,47 @@
+{
+  "vault_system_version": "2.0",
+  "repository_base": "UCM_Core_ECM",
+  
+  "logic_seeds": {
+    "count": 17,
+    "path": "seeds/logic/",
+    "index_file": "seeds/logic/seed_index.json",
+    "activation_map": {
+      "causal_inference": ["seed_inductive_reasoner", "seed_deductive_reasoner", "seed_monotonic"],
+      "moral_reasoning": ["seed_apriori", "seed_aposteriori"],
+      "identity_continuity": ["seed_intuitive_reasoner", "seed_deductive_reasoner"]
+    }
+  },
+  
+  "reference_seeds": {
+    "count": 20,
+    "path": "seeds/reference/",
+    "index_file": "seeds/reference/vault_reference_index.json",
+    "domains": {
+      "physics": "vault_physics_reference.json",
+      "ethics": "vault_ethics_reference.json",
+      "cog_sci": "vault_cogsci_reference.json",
+      "legal": "vault_legal_reference.json",
+      "math": "vault_math_reference.json"
+    }
+  },
+  
+  "skg_seed_bindings": {
+    "locke_empiricism_skg": {
+      "primary_logic_seeds": ["seed_inductive_reasoner", "seed_aposteriori"],
+      "primary_reference_seeds": ["physics", "cog_sci"]
+    },
+    "kant_critical_skg": {
+      "primary_logic_seeds": ["seed_apriori", "seed_deductive_reasoner"],
+      "primary_reference_seeds": ["physics", "ethics"]
+    },
+    "spinoza_monism_skg": {
+      "primary_logic_seeds": ["seed_deductive_reasoner", "seed_monotonic"],
+      "primary_reference_seeds": ["math", "physics"]
+    },
+    "hume_skepticism_skg": {
+      "primary_logic_seeds": ["seed_inductive_reasoner", "seed_aposteriori"],
+      "primary_reference_seeds": ["cog_sci", "physics"]
+    }
+  }
+}

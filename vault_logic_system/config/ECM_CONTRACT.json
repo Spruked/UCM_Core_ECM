@@ -1,0 +1,317 @@
+{
+  "contract_metadata": {
+    "contract_id": "ECM_CONTRACT_v1.0",
+    "seal_date": "2025-12-22",
+    "status": "FROZEN_IMMUTABLE",
+    "description": "Formal invariants for CVV, termination, and convergence"
+  },
+  
+  "canonical_verdict_vector": {
+    "cvv_definition": {
+      "confidence": {
+        "type": "float",
+        "range": [0.0, 1.0],
+        "precision": 4,
+        "derivation": "internal_consistency × coverage × stability",
+        "semantic": "Probability that this verdict's reasoning path is sound"
+      },
+      
+      "contradiction": {
+        "type": "float",
+        "range": [0.0, 1.0],
+        "precision": 4,
+        "derivation": "count(rule_violations + logical_contradictions) / path_length",
+        "semantic": "Density of internal contradictions in reasoning"
+      },
+      
+      "entropy": {
+        "type": "float",
+        "range": [0.0, 1.0],
+        "precision": 4,
+        "derivation": "semantic_ambiguity × 0.3 + reference_uncertainty × 0.25 + philosophical_divergence × 0.25 + cross_path_volatility × 0.20",
+        "semantic": "Total epistemic uncertainty (higher = more uncertain)"
+      },
+      
+      "coverage": {
+        "type": "float",
+        "range": [0.0, 1.0],
+        "precision": 4,
+        "derivation": "explained_seeds / total_relevant_seeds",
+        "semantic": "Fraction of seed vault constraints satisfied by this verdict"
+      },
+      
+      "falsified": {
+        "type": "bool",
+        "derivation": "constraint_violations.count > 0 OR logical_contradictions.count > critical_threshold",
+        "semantic": "Hard stop: verdict contains falsifying evidence"
+      }
+    },
+    
+    "emission_rules": {
+      "mandatory_emission": "Every SKG must emit a CVV at termination",
+      "partial_cvvs_prohibited": true,
+      "null_values_prohibited": true,
+      "cvv_signature": "SHA3-256(canonical_sorted_CVV_fields + skg_id)"
+    },
+    
+    "downstream_contracts": {
+      "softmax_input": "Receives CVVs only; no other data allowed",
+      "ecm_reasoning": "Only reasons over CVVs; no raw trajectories",
+      "consensus_hash": "Hashes CVV signatures only; no other artifacts",
+      "tribunal_synthesis": "Aggregates CVVs + softmax advisory only"
+    }
+  },
+  
+  "shadow_to_metric_influence_rules": {
+    "influence_semantics": {
+      "description": "Numeric rules only; no philosophical interpretation",
+      "priority": "Shadows affect confidence/entropy, never logic or rules"
+    },
+    
+    "confidence_adjustment_table": [
+      {
+        "condition": "shadow.skg_origin == 'locke' AND shadow.contradiction_flag == 'hume_induction_gap'",
+        "target": "confidence",
+        "delta": -0.10,
+        "rationale": "Empirical gaps reduce Lockean certainty"
+      },
+      {
+        "condition": "shadow.skg_origin == 'kant' AND shadow.contradiction_flag == 'spinoza_necessity_conflict'",
+        "target": "confidence",
+        "delta": -0.08,
+        "rationale": "Necessity conflicts challenge Kantian categories"
+      },
+      {
+        "condition": "shadow.skg_origin == 'hume' AND shadow.emphasis_notes.contains('sensory_grounding_critical')",
+        "target": "confidence",
+        "delta": +0.12,
+        "rationale": "Empirical confirmation boosts Humean vivacity"
+      },
+      {
+        "condition": "shadow.skg_origin == 'spinoza' AND shadow.uncertainty_markers.contains('probability_not_certainty')",
+        "target": "confidence",
+        "delta": -0.15,
+        "rationale": "Probabilistic thinking undermines geometric necessity"
+      }
+    ],
+    
+    "entropy_adjustment_table": [
+      {
+        "condition": "shadow.uncertainty_markers.length > 2",
+        "target": "entropy",
+        "delta": "+0.05",
+        "rationale": "Multiple uncertainties compound epistemic risk"
+      },
+      {
+        "condition": "shadow.contradiction_flag is not null",
+        "target": "entropy",
+        "delta": "+0.08",
+        "rationale": "Contradictions detected increase total uncertainty"
+      },
+      {
+        "condition": "shadow.skg_origin != current_skg AND shadow.confidence_delta > 0.10",
+        "target": "entropy",
+        "delta": "-0.03",
+        "rationale": "Confidence boost from cross-validation reduces entropy"
+      }
+    ],
+    
+    "application_rules": {
+      "max_adjustments_per_node": 3,
+      "cumulative_delta_cap": 0.25,
+      "shadow_ttl_ms": 5000,
+      "shadow_stacking": "sum_deltas_with_cap"
+    }
+  },
+  
+  "ecm_decision_function": {
+    "decision_space": ["ACCEPT", "REJECT", "CONDITIONAL", "REINTERPRETED", "SUSPEND"],
+    
+    "decision_rules": {
+      "HARD_REJECT": {
+        "condition": "any(cvv.falsified == true)",
+        "action": "REJECT",
+        "confidence_override": 0.0,
+        "rationale": "Falsification trumps all other metrics"
+      },
+      
+      "SUSPEND judgment": {
+        "condition": "(softmax_advisory.reliability_tier == 'D' AND average(cvv.entropy) > 0.70)",
+        "action": "SUSPEND",
+        "rationale": "Byzantine uncertainty + epistemic uncertainty together"
+      },
+      
+      "REINTERPRETED_acceptance": {
+        "condition": "average(cvv.confidence) > 0.70 AND average(cvv.coverage) > 0.75 AND softmax_advisory.epistemic_inevitability > 0.75",
+        "action": "REINTERPRETED",
+        "rationale": "High confidence but philosophical divergence requires rephrasing"
+      },
+      
+      "CONDITIONAL_acceptance": {
+        "condition": "any(cvv.confidence > 0.80) AND average(cvv.coverage) > 0.60",
+        "action": "CONDITIONAL",
+        "rationale": "One strong worldview can justify provisional action"
+      },
+      
+      "ACCEPT": {
+        "condition": "average(cvv.confidence) > 0.70 AND average(cvv.contradiction) < 0.15 AND no_falsifications",
+        "action": "ACCEPT",
+        "rationale": "Consensus strength without disqualifying factors"
+      },
+      
+      "REJECT": {
+        "condition": "average(cvv.confidence) < 0.50 OR average(cvv.coverage) < 0.40",
+        "action": "REJECT",
+        "rationale": "Insufficient confidence or coverage"
+      },
+      
+      "DEFAULT_SUSPEND": {
+        "condition": "none_of_above_rules_trigger",
+        "action": "SUSPEND",
+        "rationale": "Ambiguous case requires human escalation"
+      }
+    },
+    
+    "decision_priority": [
+      "HARD_REJECT",
+      "SUSPEND judgment",
+      "REINTERPRETED_acceptance",
+      "CONDITIONAL_acceptance",
+      "ACCEPT",
+      "REJECT",
+      "DEFAULT_SUSPEND"
+    ]
+  },
+  
+  "softmax_flatness_thresholds": {
+    "definition": "When verdict probabilities are too uniform, consensus is weak",
+    
+    "flatness_metrics": {
+      "max_probability": "float",
+      "entropy_of_distribution": "float",
+      "std_deviation": "float"
+    },
+    
+    "threshold_rules": {
+      "flat_distribution": {
+        "condition": "max_probability < 0.35",
+        "action": "FLAG_WEAK_CONSENSUS",
+        "tribunal_response": "Defer to axis-based jurisdiction weights",
+        "confidence_penalty": 0.20
+      },
+      
+      "bimodal_split": {
+        "condition": "top_two_probabilities.sum > 0.85 AND remaining_two_probabilities.sum < 0.15",
+        "action": "FLAG_PHILOSOPHICAL_SPLIT",
+        "tribunal_response": "Manual axis-weight adjustment required",
+        "confidence_penalty": 0.15
+      },
+      
+      "acceptable_concentration": {
+        "condition": "max_probability >= 0.45 AND entropy_of_distribution <= 1.2",
+        "action": "ACCEPT_SOFTMAX_GUIDANCE",
+        "tribunal_response": "Use softmax probabilities as weights",
+        "confidence_bonus": 0.10
+      }
+    }
+  },
+  
+  "termination_semantics": {
+    "definition": "Exact conditions under which an SKG stops traversing",
+    
+    "termination_conditions": {
+      "hard_limits": {
+        "max_hops": {
+          "value": 100,
+          "rationale": "Prevent infinite loops",
+          "action_on_exceed": "EMERGENCY_TERMINATE_WITH_STATUS('HOP_LIMIT')"
+        },
+        
+        "max_wall_time_ms": {
+          "value": 500,
+          "rationale": "Performance SLA",
+          "action_on_exceed": "EMERGENCY_TERMINATE_WITH_STATUS('TIMEOUT')"
+        }
+      },
+      
+      "convergence_conditions": {
+        "entropy_convergence_delta": {
+          "epsilon": 0.02,
+          "window": 5,
+          "description": "Entropy change over last 5 hops < 0.02",
+          "rationale": "Uncertainty has stabilized"
+        },
+        
+        "confidence_gradient_epsilon": {
+          "epsilon": 0.01,
+          "window": 3,
+          "description": "Confidence slope magnitude < 0.01 over 3 hops",
+          "rationale": "Confidence plateau reached"
+        }
+      },
+      
+      "falsification_conditions": {
+        "hard_falsification": {
+          "trigger": "cvv.falsified == true",
+          "rationale": "Evidence directly contradicts trajectory",
+          "action": "IMMEDIATE_TERMINATE_WITH_STATUS('FALSIFIED')"
+        },
+        
+        "confidence_collapse": {
+          "trigger": "confidence < 0.20 AND contradiction > 0.50",
+          "rationale": "Trajectory internally contradictory",
+          "action": "TERMINATE_WITH_STATUS('CONTRADICTORY')"
+        }
+      },
+      
+      "seed_exhaustion": {
+        "trigger": "available_unexplored_seeds == 0 AND coverage > 0.70",
+        "rationale": "All relevant seeds explored with reasonable coverage",
+        "action": "TERMINATE_WITH_STATUS('SEED_COMPLETE')"
+        }
+      },
+      
+      "philosophical_satisfaction": {
+        "trigger": "coverage > 0.80 AND confidence > 0.75 AND entropy < 0.60",
+        "rationale": "Verdict meets quality thresholds",
+        "action": "TERMINATE_WITH_STATUS('SATISFIED')"
+      }
+    },
+    
+    "termination_priority": [
+      "hard_falsification",
+      "max_hops",
+      "max_wall_time_ms",
+      "confidence_collapse",
+      "philosophical_satisfaction",
+      "seed_exhaustion",
+      "entropy_convergence_delta",
+      "confidence_gradient_epsilon"
+    ],
+    
+    "emergency_termination": {
+      "status_codes": {
+        "HOP_LIMIT": {"cvv_override": {"confidence": 0.0, "falsified": true}},
+        "TIMEOUT": {"cvv_override": {"confidence": 0.0, "entropy": 1.0}},
+        "FALSIFIED": {"cvv_override": {"falsified": true}},
+        "CONTRADICTORY": {"cvv_override": {"confidence": 0.10, "contradiction": 1.0}}
+      },
+      "audit_marker": "EMERGENCY_TERMINATION_TRACE"
+    }
+  },
+  
+  "invariant_preservation": {
+    "checks": {
+      "cvv_range": "all(cvv.confidence ∈ [0,1] AND cvv.contradiction ∈ [0,1] AND cvv.entropy ∈ [0,1] AND cvv.coverage ∈ [0,1])",
+      "probability_sum": "sum(softmax_probabilities) == 1.0 ± 1e-6",
+      "falsification_immutability": "IF cvv.falsified == true THEN verdict.status ≠ 'ACCEPTED'",
+      "shadow_ttl_enforcement": "NOW - shadow.timestamp <= 5000ms"
+    },
+    
+    "enforcement": {
+      "on_violation": "HALT_TRAVERSAL_AND_LOG_INVARIANT_BREACH",
+      "log_destination": "invariant_violation_log.jsonl",
+      "recovery": "SYSTEM_CANNOT_CONTINUE_SAFELY"
+    }
+  }
+}

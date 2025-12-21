@@ -1,0 +1,186 @@
+{
+  "skg_metadata": {
+    "system": "Soft Max Meta-Reasoning SKG",
+    "version": "1.0",
+    "domain": "Byzantine-Resilient Verdict Weighting",
+    "space_field_id": "softmax_consensus_skg",
+    "authority": "ADVISORY_ONLY",
+    "purpose": "Detect faulty verdicts and provide confidence-weighted consensus"
+  },
+  
+  "core_axiom": {
+    "node_id": "SOFTMAX_001",
+    "label": "Byzantine Fault Tolerance Through Redundant Assessment",
+    "definition": "Given 4 independent verdicts, consensus emerges from agreement patterns while outliers can be identified without prior trust assumptions"
+  },
+
+  "concept_nodes": [
+    {
+      "node_id": "SOFTMAX_002",
+      "label": "Input Verdict Parse",
+      "type": "INPUT_PROCESSOR",
+      "properties": {
+        "required_fields": ["verdict_status", "confidence", "internal_consistency", "reasoning_path"],
+        "validation": "schema_compliance_check"
+      },
+      "relationships": {"feeds_into": ["SOFTMAX_003", "SOFTMAX_006", "SOFTMAX_009"]}
+    },
+    {
+      "node_id": "SOFTMAX_003",
+      "label": "Internal Consistency Scorer",
+      "type": "ASSESSMENT_ENGINE",
+      "properties": {
+        "metrics": ["logic_chain_validity", "rule_application_correctness", "contradiction_density"],
+        "scoring_method": "weighted_average",
+        "fault_threshold": 0.60
+      },
+      "relationships": {"outputs": ["SOFTMAX_010"], "detects_faults_for": ["SOFTMAX_007"]}
+    },
+    {
+      "node_id": "SOFTMAX_004",
+      "label": "Seed Vault Coverage Assessor",
+      "type": "ASSESSMENT_ENGINE",
+      "properties": {
+        "metric": "percentage_vault_explained",
+        "calculation": "covered_seeds / total_seeds",
+        "penalty_for": ["unaddressed_critical_seeds"]
+      },
+      "relationships": {"outputs": ["SOFTMAX_010"]}
+    },
+    {
+      "node_id": "SOFTMAX_005",
+      "label": "Cross-Verdict Agreement Matrix",
+      "type": "PATTERN_ANALYZER",
+      "properties": {
+        "dimensions": ["verdict_status", "confidence_range", "prescription_direction"],
+        "agreement_types": ["unanimous", "pairwise", "majority", "dissent"],
+        "pattern_weights": {"unanimous": 1.30, "three_vs_one": 1.10, "pairwise_split": 0.90, "all_different": 0.70}
+      },
+      "relationships": {"affects_weight": ["SOFTMAX_010"], "flags_outlier": ["SOFTMAX_007"]}
+    },
+    {
+      "node_id": "SOFTMAX_006",
+      "label": "Confidence Stability Evaluator",
+      "type": "ASSESSMENT_ENGINE",
+      "properties": {
+        "measures": ["variance_during_traversal", "cross_path_volatility", "final_vs_initial_delta"],
+        "instability_threshold": 0.30,
+        "unstable_penalty": 0.25
+      },
+      "relationships": {"outputs": ["SOFTMAX_010"], "flags": ["SOFTMAX_007"]}
+    },
+    {
+      "node_id": "SOFTMAX_007",
+      "label": "Byzantine Fault Detector",
+      "type": "FAULT_IDENTIFIER",
+      "properties": {
+        "fault_indicators": ["internal_consistency < 0.60", "isolated_dissent_on_unanimous", "instability > 0.30 + coverage < 0.40"],
+        "response": "FLAG_NOT_EXCLUDE"
+      },
+      "relationships": {"monitors": ["SOFTMAX_003", "SOFTMAX_006"], "outputs_warning": ["SOFTMAX_012"]}
+    },
+    {
+      "node_id": "SOFTMAX_008",
+      "label": "Softmax Probability Calculator",
+      "type": "NORMALIZATION_ENGINE",
+      "properties": {
+        "formula": "exp(score_i) / Σ exp(score_j)",
+        "temperature": 1.0,
+        "output_sum": 1.0
+      },
+      "relationships": {"consumes": ["SOFTMAX_010"], "produces": ["SOFTMAX_011"]}
+    },
+    {
+      "node_id": "SOFTMAX_009",
+      "label": "Epistemic Inevitability Scorer",
+      "type": "ADVANCED_ASSESSMENT",
+      "properties": {
+        "factors": ["unintentional_convergence_count", "constraint_forced_convergence", "reference_violations_all_detected"],
+        "scale": "0.0 (contingent) to 1.0 (inevitable)"
+      },
+      "relationships": {"evaluates": ["SOFTMAX_002", "SOFTMAX_004"], "influences": ["SOFTMAX_012"]}
+    },
+    {
+      "node_id": "SOFTMAX_010",
+      "label": "Raw Score Aggregator",
+      "type": "SCORE_COLLECTOR",
+      "properties": {
+        "per_verdict_metrics": ["internal_consistency", "coverage_score", "stability_score", "agreement_multiplier"],
+        "weights": {"consistency": 0.35, "coverage": 0.30, "stability": 0.20, "agreement": 0.15}
+      },
+      "relationships": {"collects_from": ["SOFTMAX_003", "SOFTMAX_004", "SOFTMAX_005", "SOFTMAX_006"], "feeds": ["SOFTMAX_008"]}
+    },
+    {
+      "node_id": "SOFTMAX_011",
+      "label": "Probability Distribution Output",
+      "type": "OUTPUT_FORMATTER",
+      "properties": {
+        "format": {"locke": 0.00, "hume": 0.00, "kant": 0.00, "spinoza": 0.00, "sum_verification": 1.0}
+      },
+      "relationships": {"derived_from": ["SOFTMAX_008"], "output_to": ["core_tribunal_advisory"]}
+    },
+    {
+      "node_id": "SOFTMAX_012",
+      "label": "Advisory Report Generator",
+      "type": "REPORT_ASSEMBLER",
+      "properties": {
+        "output_structure": {
+          "verdict_probabilities": "SOFTMAX_011",
+          "byzantine_warnings": "SOFTMAX_007",
+          "epistemic_inevitability": "SOFTMAX_009",
+          "reliability_tier": "A|B|C|D",
+          "advisory_message": "human_readable_recommendation"
+        }
+      }
+    }
+  ],
+
+  "reasoning_rules": [
+    {
+      "rule_id": "SOFTMX_RULE_001",
+      "name": "Byzantine Fault Flagging",
+      "condition": "IF (internal_consistency < 0.60) OR (isolated_dissent AND coverage < 0.40) OR (instability > 0.30)",
+      "action": "FLAG_VERDICT_AS_POTENTIALLY_FAULTY"
+    },
+    {
+      "rule_id": "SOFTMX_RULE_002",
+      "name": "Raw Score Weighting",
+      "weights": {"consistency": 0.35, "coverage": 0.30, "stability": 0.20, "agreement": 0.15}
+    },
+    {
+      "rule_id": "SOFTMX_RULE_003",
+      "name": "Agreement Multiplier",
+      "multipliers": {"unanimous": 1.30, "three_vs_one": 1.10, "pairwise_split": 0.90, "all_different": 0.70}
+    },
+    {
+      "rule_id": "SOFTMX_RULE_004",
+      "name": "Epistemic Inevitability Boost",
+      "condition": "IF multiple_unintentional_convergence AND constraints_force_it",
+      "action": "INCREASE_CONVERGENCE_CONFIDENCE_BY_0.15"
+    },
+    {
+      "rule_id": "SOFTMX_RULE_005",
+      "name": "Outlier Penalty",
+      "condition": "IF verdict_is_statistical_outlier_by_2sigma",
+      "action": "REDUCE_RAW_SCORE_BY_0.20"
+    }
+  ],
+
+  "input_schema": {
+    "four_verdicts": {
+      "locke": {"required": ["status", "confidence", "consistency"]},
+      "hume": {"required": ["status", "confidence", "consistency"]},
+      "kant": {"required": ["status", "confidence", "consistency"]},
+      "spinoza": {"required": ["status", "confidence", "consistency"]}
+    }
+  },
+
+  "output_schema": {
+    "advisory_report": {
+      "probabilities": {"locke": 0.00, "hume": 0.00, "kant": 0.00, "spinoza": 0.00},
+      "byzantine_flags": ["philosopher_id"],
+      "reliability_tier": "A|B|C|D",
+      "inevitability_score": 0.00
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "mapping_schema": {
+    "version": "1.0",
+    "description": "Standardizes philosopher verdict outputs for Soft Max input"
+  },
+  
+  "required_fields": {
+    "verdict_status": {
+      "type": "enum",
+      "values": ["ACCEPTED", "REJECTED", "CONDITIONAL", "REINTERPRETED", "SUSPEND"],
+      "default": "SUSPEND"
+    },
+    "confidence": {
+      "type": "float",
+      "range": [0.0, 1.0],
+      "precision": 4,
+      "derivation": "internal_consistency × coverage × stability"
+    },
+    "internal_consistency": {
+      "type": "float",
+      "range": [0.0, 1.0],
+      "calculation": "logic_validity × (1 - contradiction_density)"
+    },
+    "reasoning_path": {
+      "type": "array",
+      "elements": "node_id strings from traversed graph",
+      "min_length": 3
+    },
+    "seed_vault_coverage": {
+      "type": "float",
+      "range": [0.0, 1.0],
+      "description": "fraction of vault seeds explained by verdict"
+    }
+  },
+  
+  "optional_fields": {
+    "contradiction_flags": {
+      "type": "array",
+      "elements": "string describing detected contradictions"
+    },
+    "reinterpretations": {
+      "type": "array",
+      "elements": "rephrased_proposition objects"
+    },
+    "cross_path_adjustments": {
+      "type": "array",
+      "elements": "adjustment_log entries"
+    }
+  },
+  
+  "softmax_input_transform": {
+    "raw_score": "confidence",  # Direct mapping
+    "override_conditions": [
+      {
+        "condition": "internal_consistency < 0.60",
+        "action": "REDUCE_RAW_SCORE_BY_0.30"
+      },
+      {
+        "condition": "contradiction_flags.length > 2",
+        "action": "REDUCE_RAW_SCORE_BY_0.15"
+      }
+    ]
+  }
+}

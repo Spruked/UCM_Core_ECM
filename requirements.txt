@@ -1,0 +1,11 @@
+# Core dependencies
+jsonschema>=4.0.0  # For JSON schema validation
+pytest>=7.0.0       # For running tests
+
+# Optional dependencies for development
+black>=22.0.0       # Code formatting
+mypy>=1.0.0         # Type checking
+flake8>=6.0.0       # Linting
+
+# Note: This project primarily uses Python standard library
+# Additional dependencies may be added as the project evolves
