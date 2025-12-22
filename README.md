@@ -92,6 +92,28 @@ Running 26 tests...
 ✅ ECM runtime enforcement working correctly
 ```
 
+## Web Interface
+
+The easiest way to use UCM Core ECM is through the built-in web interface:
+
+```bash
+# Run with Docker Compose (recommended)
+docker-compose up
+
+# Or run locally
+pip install -r requirements.txt
+python web_app.py
+```
+
+Then open http://localhost:5000 in your browser.
+
+**Features:**
+- Plain text query input (no voice integration)
+- File and folder upload support
+- Real-time epistemic adjudication
+- Visual confidence indicators
+- Shadow influence tracking
+
 ## Philosophical SKGs
 
 ### Hume (Empiricism)

@@ -23,8 +23,8 @@ RUN useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
 USER app
 
-# Expose port for potential API (if implemented later)
-EXPOSE 8000
+# Expose ports for web interface and potential API
+EXPOSE 5000
 
-# Default command to run tests
-CMD ["python", "vault_logic_system/tests/run_tests.py"]
+# Default command to run the web interface
+CMD ["python", "web_app.py"]

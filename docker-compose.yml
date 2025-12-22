@@ -7,12 +7,14 @@ services:
     volumes:
       - .:/app
       - /app/__pycache__
+      - ./uploads:/app/uploads
     working_dir: /app
-    command: python vault_logic_system/tests/run_tests.py
+    command: python web_app.py
     environment:
       - PYTHONPATH=/app
+      - FLASK_ENV=production
     ports:
-      - "8000:8000"  # For future API
+      - "5000:5000"  # Web interface
     restart: unless-stopped
 
   # Optional: Development service with hot reload
@@ -21,11 +23,27 @@ services:
     container_name: ucm-core-ecm-dev
     volumes:
       - .:/app
+      - ./uploads:/app/uploads
     working_dir: /app
-    command: tail -f /dev/null  # Keep container running
+    command: python web_app.py
     environment:
       - PYTHONPATH=/app
+      - FLASK_ENV=development
     ports:
-      - "8001:8000"
+      - "5001:5000"
     profiles:
       - dev
+
+  # Test runner service
+  ucm-tests:
+    build: .
+    container_name: ucm-core-ecm-tests
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    working_dir: /app
+    command: python vault_logic_system/tests/run_tests.py
+    environment:
+      - PYTHONPATH=/app
+    profiles:
+      - test
