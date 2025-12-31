@@ -23,8 +23,9 @@ RUN useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
 USER app
 
-# Expose ports for web interface and potential API
-EXPOSE 5000
+# Expose port for the FastAPI backend (uvicorn)
+EXPOSE 8000
 
-# Default command to run the web interface
-CMD ["python", "web_app.py"]
+# Default command runs uvicorn expecting a FastAPI `app` in `main.py`.
+# Adjust if your FastAPI entrypoint differs.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

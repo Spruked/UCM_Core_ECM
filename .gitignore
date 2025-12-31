@@ -130,6 +130,7 @@ Thumbs.db
 test_results.txt
 *.log
 
-# Temporary files
-*.tmp
-*.temp
+# Cloned repositories within the codebase
+cloned_repos/
+**/cloned_repos/
+*.git/

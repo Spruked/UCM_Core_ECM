@@ -9,12 +9,14 @@ services:
       - /app/__pycache__
       - ./uploads:/app/uploads
     working_dir: /app
-    command: python web_app.py
+    # The service runs the canonical Python backend (FastAPI expected).
+    # Do not run the experimental Flask app here; frontends should be
+    # separate React/Vite services that call FastAPI endpoints.
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 8000
     environment:
       - PYTHONPATH=/app
-      - FLASK_ENV=production
     ports:
-      - "5000:5000"  # Web interface
+      - "8000:8000"  # FastAPI default port (uvicorn)
     restart: unless-stopped
 
   # Optional: Development service with hot reload
@@ -25,12 +27,11 @@ services:
       - .:/app
       - ./uploads:/app/uploads
     working_dir: /app
-    command: python web_app.py
+    command: uvicorn --reload main:app --host 0.0.0.0 --port 8000
     environment:
       - PYTHONPATH=/app
-      - FLASK_ENV=development
     ports:
-      - "5001:5000"
+      - "8001:8000"
     profiles:
       - dev
 

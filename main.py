@@ -564,8 +564,10 @@ class TribunalSynthesizer:
         guidance = self._generate_guidance(axis_judgments, reinterpretations)
         
         # 8. Compile final verdict
+        claim_id = seed_vault_data.get('claim_id', f"claim_{int(time.time() * 1000)}")
+
         return {
-            "claim_id": seed_vault_data['claim_id'],
+            "claim_id": claim_id,
             "final_verdict": {
                 "status": final_status,
                 "primary_axis_judgments": axis_judgments,
@@ -706,17 +708,42 @@ class UCMReasoningCore:
 
         verdict = ecm_runtime.decide()
 
-        # Step 3: Compile full result with audit trail
+        # Step 3: Build philosopher verdict stubs from CVVs (tribunal expects verdict objects)
+        philosopher_verdicts = {}
+        for i, cvv in enumerate(beam_result.cvvs):
+            skg_id = getattr(cvv, 'skg_id', getattr(cvv, 'skg', f'skg_{i}'))
+            philosopher_verdicts[skg_id] = {
+                "status": getattr(cvv, 'status', 'PROVISIONAL'),
+                "confidence": getattr(cvv, 'confidence', 0.0),
+                "cvv": cvv
+            }
+
+        # Use tribunal synthesizer to produce canonical final_verdict structure
+        tribunal_output = self.tribunal.synthesize(philosopher_verdicts, claim.get('seed_vault_data', {}))
+
+        # Step 4: Compile full result with audit trail and backward-compatible keys
         final_result = {
-            "verdict": verdict,
+            # Backward-compatible top-level keys expected by integration tests
+            "final_verdict": tribunal_output.get('final_verdict', {}),
+            "all_philosopher_verdicts": tribunal_output.get('all_philosopher_verdicts', philosopher_verdicts),
+            "meta_analysis": tribunal_output.get('meta_analysis', {}),
+
+            # Additional diagnostics and signatures
+            "ecm_runtime_verdict": verdict,
             "beam_metadata": beam_result.beam_metadata,
             "resonance_markers": beam_result.resonance_markers,
-            "cvv_signatures": [cvv.signature() for cvv in beam_result.cvvs],
+            "cvv_signatures": [getattr(cvv, 'signature', lambda: None)() for cvv in beam_result.cvvs],
             "timestamp_ms": int(time.time() * 1000),
             "deliberation_complete": True
         }
 
-        print(f"🏛️  Tribunal verdict: {verdict['status']} (confidence: {verdict['avg_confidence']:.3f})")
+        # Log a concise tribunal verdict summary when possible
+        try:
+            status = final_result['final_verdict'].get('status', 'UNKNOWN')
+            confidence = final_result['meta_analysis'].get('softmax_advisory', {}).get('epistemic_inevitability', 0.0)
+            print(f"🏛️  Tribunal verdict: {status} (softmax inevitability: {confidence:.3f})")
+        except Exception:
+            pass
 
         return final_result
 
@@ -734,3 +761,178 @@ class UCMReasoningCore:
     def get_shadow_stats(self) -> Dict[str, Any]:
         """Get shadow propagation statistics across all SKGs"""
         return self.invocation_layer.get_shadow_stats()
+
+
+# --- FastAPI endpoints (created when FastAPI is available) ---
+try:
+    from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.staticfiles import StaticFiles
+    from pydantic import BaseModel
+    from typing import Optional, List
+    from pathlib import Path
+    import aiofiles
+    import os
+    import re
+    import uuid
+    import subprocess
+    import logging
+except Exception as _e:
+    # FastAPI not installed in this environment — API endpoints will be
+    # unavailable. This keeps the repository importable for tests that do
+    # not require the HTTP API.
+    app = None
+    print("FastAPI not available; HTTP API endpoints disabled.", _e)
+else:
+    app = FastAPI(title="UCM Core ECM API", version="1.0.0")
+
+    # Allow common local dev origins (Vite/CRA default ports) — adjust as needed.
+    origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    UPLOAD_DIR = Path(__file__).parent / "uploads"
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    ALLOWED_EXT = {".txt", ".json", ".md", ".pdf", ".doc", ".docx"}
+
+    # Initialize a single core instance for HTTP handling
+    core = UCMReasoningCore()
+
+    # Utilities: secure filename, optional virus scan, and auth dependency
+    FNAME_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")
+
+    def secure_filename(filename: str) -> str:
+        """Sanitize uploaded filename and prefix with a short uuid to avoid collisions."""
+        name = Path(filename).name
+        name = name.strip().replace(" ", "_")
+        name = FNAME_SAFE_RE.sub("", name)
+        # collapse multiple dots
+        name = re.sub(r"\.+", ".", name)
+        if name.startswith("."):
+            name = "file" + name
+        # limit length
+        if len(name) > 120:
+            base, ext = os.path.splitext(name)
+            name = base[:120 - len(ext)] + ext
+        prefix = uuid.uuid4().hex[:8]
+        return f"{prefix}_{name}"
+
+    def scan_file(path: Path) -> bool:
+        """Attempt to scan file for malware. Controlled by ECM_UPLOAD_SCAN env var.
+
+        The function will attempt to use `pyclamd` if available, otherwise
+        it will fall back to a `clamscan` subprocess call if present on PATH.
+        If scanning is enabled but no scanner is available, an error is raised.
+        """
+        scan_enabled = os.getenv("ECM_UPLOAD_SCAN", "false").lower() == "true"
+        if not scan_enabled:
+            return True
+
+        # Try pyclamd first
+        try:
+            import pyclamd
+
+            try:
+                cd = pyclamd.ClamdUnixSocket()
+            except Exception:
+                cd = pyclamd.ClamdNetworkSocket()
+            res = cd.scan_file(str(path))
+            # pyclamd returns None for clean files
+            return res is None
+        except Exception:
+            # Fallback to clamscan binary
+            try:
+                proc = subprocess.run(["clamscan", "--no-summary", str(path)], capture_output=True)
+                return proc.returncode == 0
+            except FileNotFoundError:
+                raise HTTPException(status_code=500, detail="Upload scanning enabled but no scanner available (install pyclamd or clamscan)")
+
+    def require_api_key(x_api_key: Optional[str] = Header(None), authorization: Optional[str] = Header(None)):
+        """Simple API key check. Enable by setting ECM_REQUIRE_AUTH=true and ECM_API_KEY env var."""
+        req = os.getenv("ECM_REQUIRE_AUTH", "false").lower() == "true"
+        if not req:
+            return True
+        api_key = os.getenv("ECM_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="ECM_REQUIRE_AUTH=true but ECM_API_KEY not configured")
+        provided = x_api_key
+        if not provided and authorization and authorization.startswith("Bearer "):
+            provided = authorization.split(" ", 1)[1]
+        if provided != api_key:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        return True
+
+    class AdjudicateRequest(BaseModel):
+        query: str
+        seed_vault: Optional[dict] = None
+
+    @app.post("/api/adjudicate")
+    async def api_adjudicate(payload: AdjudicateRequest, _auth: bool = Depends(require_api_key)):
+        query = (payload.query or "").strip()
+        if not query:
+            raise HTTPException(status_code=400, detail="Empty query")
+        try:
+            result = core.adjudicate_claim(query, payload.seed_vault or {})
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/upload")
+    async def api_upload(files: List[UploadFile] = File(...), _auth: bool = Depends(require_api_key)):
+        uploaded = []
+        for upload in files:
+            raw_name = Path(upload.filename).name
+            ext = Path(raw_name).suffix.lower()
+            if ext not in ALLOWED_EXT:
+                # skip unsupported file types
+                continue
+            filename = secure_filename(raw_name)
+            dest = UPLOAD_DIR / filename
+            async with aiofiles.open(dest, "wb") as out_f:
+                content = await upload.read()
+                await out_f.write(content)
+
+            # Virus scan if enabled; will raise HTTPException on failure
+            try:
+                clean = scan_file(dest)
+            except HTTPException:
+                # remove file if scanning failed due to missing scanner
+                try:
+                    dest.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                raise
+
+            if not clean:
+                # infected — remove and fail
+                try:
+                    dest.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                raise HTTPException(status_code=400, detail=f"Malicious content detected in {raw_name}")
+
+            uploaded.append({
+                "filename": filename,
+                "size": dest.stat().st_size,
+                "content_type": upload.content_type,
+            })
+
+        return {"message": f"Successfully uploaded {len(uploaded)} files", "files": uploaded}
+
+    @app.get("/api/health")
+    async def api_health():
+        return {"status": "healthy", "service": "UCM Core ECM FastAPI"}
+
+    # Serve uploaded files for convenience (local/dev only)
+    app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")

@@ -6,21 +6,30 @@ Thank you for your interest in contributing to UCM Core ECM! This document provi
 
 ### Prerequisites
 - Python 3.8 or higher
+- Node.js 16+ (for frontend development)
 - Git
 
 ### Installation
 ```bash
 git clone <repository-url>
 cd UCM_Core_ECM
-pip install -r requirements.txt  # if requirements.txt exists
+pip install -r requirements.txt
+cd frontend && npm install
 ```
 
 ### Running Tests
 ```bash
-python vault_logic_system/tests/run_tests.py
+# Backend tests
+python -m pytest
+
+# Integration tests
+python -m pytest vault_logic_system/tests/test_api_integration.py
+
+# Frontend build check
+cd frontend && npm run build
 ```
 
-All tests must pass before submitting a pull request.
+All tests must pass before submitting a pull request (30/30 backend tests + frontend build).
 
 ## Code Style
 
@@ -41,9 +50,11 @@ All changes must maintain ECM contract compliance. The ECM runtime enforces:
 ### Testing Requirements
 
 - Add unit tests for new functionality
-- Ensure all existing tests pass
+- Ensure all existing tests pass (30/30)
 - Test edge cases and error conditions
 - Validate ECM contract compliance
+- Test API endpoints if modifying backend
+- Ensure frontend builds successfully
 
 ## Pull Request Process
 

@@ -1,7 +1,13 @@
 # Core dependencies
+# Core dependencies
 jsonschema>=4.0.0  # For JSON schema validation
 pytest>=7.0.0       # For running tests
-Flask>=2.0.0        # For web interface
+
+# FastAPI backend
+fastapi>=0.95.0
+uvicorn[standard]>=0.22.0
+python-multipart>=0.0.6
+aiofiles>=23.1.0
 
 # Optional dependencies for development
 black>=22.0.0       # Code formatting
